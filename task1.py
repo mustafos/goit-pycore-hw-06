@@ -10,15 +10,15 @@ class Field:
 
 class Name(Field):
     def __init__(self, value):
-        if not value or not value.strip():
+        if not isinstance(value, str) or not value.strip():
             raise ValueError("Name cannot be empty")
 
-        super().__init__(value)
+        super().__init__(value.strip())
 
 
 class Phone(Field):
     def __init__(self, value):
-        if not value.isdigit() or len(value) != 10:
+        if not isinstance(value, str) or not value.isdigit() or len(value) != 10:
             raise ValueError("Phone number must contain exactly 10 digits")
 
         super().__init__(value)
@@ -42,11 +42,10 @@ class Record:
     def remove_phone(self, phone):
         found_phone = self.find_phone(phone)
 
-        if found_phone:
-            self.phones.remove(found_phone)
-            return True
+        if found_phone is None:
+            raise ValueError("Phone number not found")
 
-        return False
+        self.phones.remove(found_phone)
 
     def edit_phone(self, old_phone, new_phone):
         found_phone = self.find_phone(old_phone)
@@ -54,10 +53,9 @@ class Record:
         if found_phone is None:
             raise ValueError("Phone number not found")
 
-        new_phone = Phone(new_phone)
-
+        validated_phone = Phone(new_phone)
         index = self.phones.index(found_phone)
-        self.phones[index] = new_phone
+        self.phones[index] = validated_phone
 
     def __str__(self):
         phones = "; ".join(phone.value for phone in self.phones)
@@ -72,39 +70,33 @@ class AddressBook(UserDict):
         return self.data.get(name)
 
     def delete(self, name):
-        if name in self.data:
-            del self.data[name]
+        if name not in self.data:
+            raise ValueError("Contact not found")
 
-book = AddressBook()
+        del self.data[name]
 
-john_record = Record("John")
-john_record.add_phone("1234567890")
-john_record.add_phone("5555555555")
 
-book.add_record(john_record)
+if __name__ == "__main__":
+    book = AddressBook()
 
-jane_record = Record("Jane")
-jane_record.add_phone("9876543210")
+    john_record = Record("John")
+    john_record.add_phone("1234567890")
+    john_record.add_phone("5555555555")
+    book.add_record(john_record)
 
-book.add_record(jane_record)
+    jane_record = Record("Jane")
+    jane_record.add_phone("9876543210")
+    book.add_record(jane_record)
 
-# Display all contacts
-for name, record in book.data.items():
-    print(record)
+    for name, record in book.data.items():
+        print(record)
 
-# Find and edit John's phone
-john = book.find("John")
-john.edit_phone("1234567890", "1112223333")
+    john = book.find("John")
+    john.edit_phone("1234567890", "1112223333")
 
-print(john)
+    print(john)
 
-# Find a specific phone
-found_phone = john.find_phone("5555555555")
-print(f"{john.name}: {found_phone}")
+    found_phone = john.find_phone("5555555555")
+    print(f"{john.name}: {found_phone}")
 
-# Delete Jane
-book.delete("Jane")
-
-print("\nAfter deleting Jane:")
-for record in book.data.values():
-    print(record)
+    book.delete("Jane")
